@@ -1,0 +1,401 @@
+/* ==========================================================================
+   NEPTUNE APP LAYOUT — Sidebar / Header / Main / Responsive
+   ========================================================================== */
+
+.app-shell {
+  min-height: 100vh;
+}
+
+/* --------------------------------------------------------------------------
+   SIDEBAR
+   -------------------------------------------------------------------------- */
+
+.sidebar {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: var(--sidebar-w);
+  background: linear-gradient(180deg, var(--np-green-900) 0%, var(--np-green-950) 100%);
+  color: rgba(232, 242, 234, 0.85);
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+  transform: translateX(-105%);
+  transition: transform 0.22s ease;
+}
+
+.sidebar.open {
+  transform: none;
+}
+
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 22px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sidebar-logo-mark {
+  width: 42px;
+  height: 42px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.06);
+  clip-path: polygon(
+    18% 0, 82% 0, 100% 18%, 100% 82%,
+    82% 100%, 18% 100%, 0 82%, 0 18%
+  );
+}
+
+.sidebar-brand-name {
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: #ffffff;
+  line-height: 1;
+}
+
+.sidebar-brand-sub {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--np-green-300);
+  margin-top: 4px;
+}
+
+.sidebar-nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nav-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: rgba(232, 242, 234, 0.35);
+  padding: 12px 12px 6px;
+}
+
+.nav-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius-control);
+  color: rgba(232, 242, 234, 0.78);
+  font-size: 13.5px;
+  font-weight: 600;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.nav-item:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: #ffffff;
+}
+
+.nav-item.active {
+  background: var(--np-green-700);
+  color: #ffffff;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 7px;
+  bottom: 7px;
+  width: 3px;
+  background: var(--np-green-300);
+}
+
+.nav-item svg {
+  width: 17px;
+  height: 17px;
+  flex: none;
+}
+
+.sidebar-foot {
+  margin-top: auto;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 12px;
+}
+
+.nav-logout {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: none;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: rgba(232, 242, 234, 0.65);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.nav-logout:hover {
+  background: rgba(193, 53, 43, 0.22);
+  color: #ffffff;
+}
+
+.nav-logout svg {
+  width: 17px;
+  height: 17px;
+}
+
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 20, 13, 0.5);
+  z-index: 95;
+  animation: np-fade 0.18s ease both;
+}
+
+/* --------------------------------------------------------------------------
+   HEADER
+   -------------------------------------------------------------------------- */
+
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  height: var(--header-h);
+  padding: 0 24px;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--np-line);
+}
+
+.header-menu {
+  display: none;
+  width: 38px;
+  height: 38px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--np-line);
+  border-radius: var(--radius-control);
+  background: var(--np-surface);
+  color: var(--np-ink-2);
+  cursor: pointer;
+}
+
+.header-menu:hover {
+  color: var(--np-green-800);
+  border-color: var(--np-green-300);
+}
+
+.header-title-wrap {
+  min-width: 0;
+}
+
+.header-title {
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.header-subtitle {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--np-ink-3);
+  margin-top: 1px;
+}
+
+.header-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.icon-chip {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--np-ink-2);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.icon-chip:hover {
+  background: var(--np-green-50);
+  color: var(--np-green-800);
+}
+
+.icon-chip .chip-dot {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--np-danger);
+  border: 2px solid #ffffff;
+}
+
+.header-profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 8px;
+  margin-left: 4px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  background: none;
+  cursor: pointer;
+}
+
+.header-profile:hover {
+  background: var(--np-green-50);
+}
+
+.profile-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--np-ink);
+  text-align: left;
+  line-height: 1.15;
+}
+
+.profile-role {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--np-ink-3);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  text-align: left;
+  margin-top: 1px;
+}
+
+/* --------------------------------------------------------------------------
+   MAIN CONTENT
+   -------------------------------------------------------------------------- */
+
+.app-main {
+  margin-left: 0;
+  min-height: 100vh;
+  padding: 26px 28px 48px;
+  transition: margin-left 0.22s ease;
+}
+
+.page {
+  max-width: 1280px;
+  margin: 0 auto;
+  animation: np-fade 0.25s ease both;
+}
+
+.page-head {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.page-head h2 {
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.page-head p {
+  font-size: 13px;
+  color: var(--np-ink-2);
+  margin-top: 3px;
+}
+
+.page-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--np-green-700);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px 10px;
+  margin-left: -10px;
+  border-radius: var(--radius-control);
+}
+
+.back-link:hover {
+  background: var(--np-green-50);
+}
+
+/* --------------------------------------------------------------------------
+   RESPONSIVE BREAKPOINTS
+   -------------------------------------------------------------------------- */
+
+@media (min-width: 1120px) {
+  .sidebar {
+    transform: none;
+  }
+
+  .sidebar-overlay {
+    display: none;
+  }
+
+  .app-main {
+    margin-left: var(--sidebar-w);
+  }
+}
+
+@media (max-width: 1119px) {
+  .header-menu {
+    display: inline-flex;
+  }
+}
+
+@media (max-width: 767px) {
+  .app-main {
+    padding: 18px 14px 40px;
+  }
+
+  .app-header {
+    padding: 0 14px;
+    gap: 10px;
+  }
+
+  .profile-name,
+  .profile-role {
+    display: none;
+  }
+
+  .header-title {
+    font-size: 15px;
+  }
+}

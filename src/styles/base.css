@@ -1,0 +1,154 @@
+/* ==========================================================================
+   NEPTUNE BASE STYLES
+   ========================================================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--np-ink);
+  background: var(--np-bg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+h1, h2, h3, h4 {
+  line-height: 1.25;
+  font-weight: 800;
+  color: var(--np-ink);
+}
+
+a {
+  color: var(--np-green-600);
+  text-decoration: none;
+}
+
+button {
+  font-family: inherit;
+}
+
+img, svg {
+  display: block;
+}
+
+:focus-visible {
+  outline: 2px solid var(--np-green-500);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+::selection {
+  background: var(--np-green-200);
+  color: var(--np-green-900);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--np-green-200);
+  border-radius: 0;
+  border: 2px solid var(--np-bg);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--np-green-300);
+}
+
+.mono {
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+}
+
+/* NEPTUNE logo lockup */
+.np-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 13px;
+}
+
+.np-logo-text {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  line-height: 1;
+}
+
+.np-logo-name {
+  font-family: var(--font-mono);
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+}
+
+.np-logo-sub {
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+}
+
+.np-logo-name.tone-dark {
+  color: var(--np-ink);
+}
+
+.np-logo-sub.tone-dark {
+  color: var(--np-ink-3);
+}
+
+.np-logo-name.tone-light {
+  color: #ffffff;
+}
+
+.np-logo-sub.tone-light {
+  color: var(--np-green-300);
+}
+
+.muted {
+  color: var(--np-ink-2);
+}
+
+.fade-in {
+  animation: np-fade 0.25s ease both;
+}
+
+@keyframes np-fade {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes np-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes np-shimmer {
+  to { transform: translateX(100%); }
+}
+
+@keyframes np-slide-in {
+  from { opacity: 0; transform: translateX(14px); }
+  to { opacity: 1; transform: none; }
+}
