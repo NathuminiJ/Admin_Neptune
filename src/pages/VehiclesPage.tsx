@@ -1,4 +1,4 @@
-import { Bike, Eye, Pencil, Plus, Power, Truck } from 'lucide-react';
+import { Bike, Eye, Pencil, Plus, Power, Trash2, Truck } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ConfirmationDialog } from '../components/ConfirmationDialog';
@@ -69,6 +69,7 @@ export function VehiclesPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Vehicle | null>(null);
   const [pendingToggle, setPendingToggle] = useState<Vehicle | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<Vehicle | null>(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -153,6 +154,18 @@ export function VehiclesPage() {
     setPendingToggle(null);
   };
 
+  const confirmDelete = async () => {
+    if (!pendingDelete) return;
+    try {
+      await api.delete(`/admin/vehicles/${pendingDelete.id}`);
+      toast.success(`Vehicle ${pendingDelete.vehicleCode} permanently deleted`);
+      fetchData();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to delete vehicle');
+    }
+    setPendingDelete(null);
+  };
+
   const columns: Column<Vehicle>[] = [
     {
       key: 'code',
@@ -177,7 +190,7 @@ export function VehiclesPage() {
     {
       key: 'actions',
       header: 'Actions',
-      width: '110px',
+      width: '140px',
       align: 'right',
       render: (v: Vehicle) => (
         <span className="actions-cell" onClick={(e) => e.stopPropagation()}>
@@ -193,6 +206,9 @@ export function VehiclesPage() {
             onClick={() => setPendingToggle(v)}
           >
             <Power size={15} />
+          </IconButton>
+          <IconButton label="Delete" className="delete" onClick={() => setPendingDelete(v)}>
+            <Trash2 size={15} />
           </IconButton>
         </span>
       ),
@@ -311,6 +327,16 @@ export function VehiclesPage() {
         destructive={pendingToggle?.status === 'ACTIVE'}
         onConfirm={confirmToggle}
         onCancel={() => setPendingToggle(null)}
+      />
+
+      <ConfirmationDialog
+        open={pendingDelete !== null}
+        title="Delete vehicle"
+        message={`Are you sure you want to permanently delete vehicle ${pendingDelete?.vehicleCode ?? ''}? This action is permanent and cannot be undone. If the vehicle is referenced by historical collections, the delete will be blocked and the vehicle will remain.`}
+        confirmLabel="Delete"
+        destructive
+        onConfirm={confirmDelete}
+        onCancel={() => setPendingDelete(null)}
       />
     </div>
   );

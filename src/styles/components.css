@@ -121,6 +121,17 @@
   color: var(--np-danger);
 }
 
+/* Hard-delete action: persistently destructive and distinct from
+   Activate/Deactivate (which keep a neutral look until hover). */
+.btn-icon.delete {
+  color: var(--np-danger);
+}
+
+.btn-icon.delete:hover {
+  background: var(--np-danger);
+  color: #fff;
+}
+
 .btn-icon:disabled {
   opacity: 0.45;
   cursor: not-allowed;

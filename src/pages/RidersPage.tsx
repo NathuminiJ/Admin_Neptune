@@ -1,4 +1,4 @@
-import { Eye, Pencil, Plus, Power } from 'lucide-react';
+import { Eye, Pencil, Plus, Power, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Avatar } from '../components/Avatar';
@@ -41,6 +41,7 @@ export function RidersPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<RiderView | null>(null);
   const [pendingToggle, setPendingToggle] = useState<RiderView | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<RiderView | null>(null);
 
   const fetchRiders = useCallback(async () => {
     setLoading(true);
@@ -126,6 +127,18 @@ export function RidersPage() {
     setPendingToggle(null);
   };
 
+  const confirmDelete = async () => {
+    if (!pendingDelete) return;
+    try {
+      await api.delete(`/admin/riders/${pendingDelete.id}`);
+      toast.success(`Rider ${pendingDelete.fullName} permanently deleted`);
+      fetchRiders();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to delete rider');
+    }
+    setPendingDelete(null);
+  };
+
   const columns: Column<RiderView>[] = [
     {
       key: 'name',
@@ -161,7 +174,7 @@ export function RidersPage() {
     {
       key: 'actions',
       header: 'Actions',
-      width: '110px',
+      width: '140px',
       align: 'right',
       render: (r: RiderView) => (
         <span className="actions-cell" onClick={(e) => e.stopPropagation()}>
@@ -177,6 +190,9 @@ export function RidersPage() {
             onClick={() => setPendingToggle(r)}
           >
             <Power size={15} />
+          </IconButton>
+          <IconButton label="Delete" className="delete" onClick={() => setPendingDelete(r)}>
+            <Trash2 size={15} />
           </IconButton>
         </span>
       ),
@@ -285,6 +301,16 @@ export function RidersPage() {
         destructive={pendingToggle?.status === 'ACTIVE'}
         onConfirm={confirmToggle}
         onCancel={() => setPendingToggle(null)}
+      />
+
+      <ConfirmationDialog
+        open={pendingDelete !== null}
+        title="Delete rider"
+        message={`Are you sure you want to permanently delete ${pendingDelete?.fullName ?? 'this rider'} (${pendingDelete?.loginId ?? ''})? This action is permanent and cannot be undone. Deleting a rider will not remove any assigned vehicle. If the rider has related records, the delete will be blocked.`}
+        confirmLabel="Delete"
+        destructive
+        onConfirm={confirmDelete}
+        onCancel={() => setPendingDelete(null)}
       />
     </div>
   );

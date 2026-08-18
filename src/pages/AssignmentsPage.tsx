@@ -202,7 +202,7 @@ export function AssignmentsPage() {
           <IconButton label="Edit" onClick={() => openEdit(a)}>
             <Pencil size={15} />
           </IconButton>
-          <IconButton label="Delete" danger onClick={() => setPendingDelete(a)}>
+          <IconButton label="Delete" className="delete" onClick={() => setPendingDelete(a)}>
             <Trash2 size={15} />
           </IconButton>
         </span>
