@@ -1,9 +1,10 @@
-import { BarChart3, CalendarClock } from 'lucide-react';
+import { BarChart3, CalendarClock, Download } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
+import * as XLSX from 'xlsx';
 import { DataTable } from '../components/DataTable';
 import type { Column } from '../components/DataTable';
 import { FormField } from '../components/FormField';
-import { PrimaryButton } from '../components/buttons';
+import { PrimaryButton, SecondaryButton } from '../components/buttons';
 import { EmptyState, ErrorState } from '../components/states';
 import { StatusBadge } from '../components/StatusBadge';
 import { api } from '../lib/api';
@@ -23,7 +24,7 @@ import type {
   RiderView,
   Vehicle,
 } from '../types';
-import { formatDate, formatDateTime, formatWeight } from '../utils/format';
+import { formatDateTime, formatWeight } from '../utils/format';
 
 type ReportKey = 'collection' | 'request' | 'collector' | 'rider' | 'vehicle' | 'assignment';
 
@@ -40,9 +41,16 @@ const REQUEST_STATUSES = ['PENDING', 'ACCEPTED', 'COMPLETED', 'CANCELLED'];
 
 type ReportRow = Record<string, string>;
 
+interface ReportSummary {
+  total: number;
+  weightKg?: number;
+  statuses?: Record<string, number>;
+}
+
 interface ReportResult {
   columns: Column<ReportRow>[];
   rows: ReportRow[];
+  summary: ReportSummary;
 }
 
 const noOp: Column<ReportRow>[] = [];
@@ -80,7 +88,6 @@ export function ReportsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ReportResult | null>(null);
-  const [generatedFor, setGeneratedFor] = useState<ReportKey | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -103,6 +110,14 @@ export function ReportsPage() {
       cancelled = true;
     };
   }, []);
+
+  // Any change to the report type OR any filter invalidates a previously
+  // generated result so stale data is never shown as if it belongs to the
+  // current selection.
+  useEffect(() => {
+    setError(null);
+    setResult(null);
+  }, [reportType, dateFrom, dateTo, collectorId, riderId, vehicleId, status]);
 
   const inDateRange = useCallback(
     (value: string | null | undefined): boolean => {
@@ -133,47 +148,53 @@ export function ReportsPage() {
       const requests = req.map(normalizeRequest);
 
       if (reportType === 'collection') {
-        const rows: ReportRow[] = requests
+        const filtered = requests
           .filter((r) => r.collection !== null)
-          .filter((r) => matchesRequest(r, r.collection?.collectedAt ?? r.collection?.createdAt))
-          .map((r) => ({
-            collectionId: r.collection!.id,
-            requestId: r.id,
-            date: formatDateTime(r.collection!.collectedAt ?? r.collection!.createdAt),
-            collector: r.collector?.fullName ?? '—',
-            rider: r.rider?.fullName ?? '—',
-            vehicle: r.collection!.vehicle?.vehicleCode ?? '—',
-            weight: formatWeight(r.collection!.weightKg),
-          }));
+          .filter((r) => matchesRequest(r, r.collection?.collectedAt ?? r.collection?.createdAt));
+        const rows: ReportRow[] = filtered.map((r) => ({
+          collectionId: r.collection!.id,
+          requestId: r.id,
+          date: formatDateTime(r.collection!.collectedAt ?? r.collection!.createdAt),
+          collector: r.collector?.fullName ?? '—',
+          rider: r.rider?.fullName ?? '—',
+          vehicle: r.collection!.vehicle?.vehicleCode ?? '—',
+          weight: formatWeight(r.collection!.weightKg),
+        }));
+        const weightKg = filtered.reduce(
+          (sum, r) => sum + (r.collection?.weightKg ?? 0),
+          0,
+        );
         return {
           columns: [
             { key: 'collectionId', header: 'Collection ID', render: (x) => <span className="mono">{x.collectionId}</span> },
             { key: 'requestId', header: 'Request ID', render: (x) => <span className="mono">{x.requestId}</span> },
-            { key: 'date', header: 'Collection Date / Time' },
+            { key: 'date', header: 'Collected At' },
             { key: 'collector', header: 'Collector' },
             { key: 'rider', header: 'Rider' },
             { key: 'vehicle', header: 'Vehicle' },
             { key: 'weight', header: 'Weight (kg)', align: 'right' },
           ],
           rows,
+          summary: { total: rows.length, weightKg },
         };
       }
 
-      const rows: ReportRow[] = requests
-        .filter((r) => matchesRequest(r, r.requestedAt))
-        .map((r) => ({
-          requestId: r.id,
-          collector: r.collector?.fullName ?? '—',
-          rider: r.rider?.fullName ?? '—',
-          status: r.status,
-          qrVerified: r.qrVerified ? 'Yes' : 'No',
-          latitude: String(r.latitude),
-          longitude: String(r.longitude),
-          requested: r.requestedAt ? formatDateTime(r.requestedAt) : '—',
-          accepted: r.acceptedAt ? formatDateTime(r.acceptedAt) : '—',
-          completed: r.completedAt ? formatDateTime(r.completedAt) : '—',
-          cancelled: r.cancelledAt ? formatDateTime(r.cancelledAt) : '—',
-        }));
+      const filtered = requests.filter((r) => matchesRequest(r, r.requestedAt));
+      const rows: ReportRow[] = filtered.map((r) => ({
+        requestId: r.id,
+        collector: r.collector?.fullName ?? '—',
+        rider: r.rider?.fullName ?? '—',
+        status: r.status,
+        qrVerified: r.qrVerified ? 'Yes' : 'No',
+        latitude: String(r.latitude),
+        longitude: String(r.longitude),
+        requested: r.requestedAt ? formatDateTime(r.requestedAt) : '—',
+        accepted: r.acceptedAt ? formatDateTime(r.acceptedAt) : '—',
+        completed: r.completedAt ? formatDateTime(r.completedAt) : '—',
+        cancelled: r.cancelledAt ? formatDateTime(r.cancelledAt) : '—',
+      }));
+      const statuses: Record<string, number> = {};
+      for (const r of filtered) statuses[r.status] = (statuses[r.status] || 0) + 1;
       return {
         columns: [
           { key: 'requestId', header: 'Request ID', render: (x) => <span className="mono">{x.requestId}</span> },
@@ -187,39 +208,38 @@ export function ReportsPage() {
           { key: 'qrVerified', header: 'QR Verified' },
           { key: 'latitude', header: 'Latitude' },
           { key: 'longitude', header: 'Longitude' },
-          { key: 'requested', header: 'Requested' },
-          { key: 'accepted', header: 'Accepted' },
-          { key: 'completed', header: 'Completed' },
-          { key: 'cancelled', header: 'Cancelled' },
+          { key: 'requested', header: 'Requested At' },
+          { key: 'accepted', header: 'Accepted At' },
+          { key: 'completed', header: 'Completed At' },
+          { key: 'cancelled', header: 'Cancelled At' },
         ],
         rows,
+        summary: { total: rows.length, statuses },
       };
     }
 
     if (reportType === 'assignment') {
-      const [a] = await Promise.all([
-        api.get<DailyAssignment[]>('/admin/assignments'),
-      ]);
-      const assignments = a.map(normalizeAssignment);
-      const rows: ReportRow[] = assignments
+      const a = (await api.get<DailyAssignment[]>('/admin/assignments')).map(normalizeAssignment);
+      const rows: ReportRow[] = a
         .filter((x) => inDateRange(x.assignmentDate))
         .filter((x) => collectorId === 'ALL' || x.collectorId === collectorId)
         .map((x) => ({
           id: x.id,
           collector: x.collectorName || '—',
           date: x.assignmentDate,
-          created: formatDate(x.createdAt),
-          updated: formatDate(x.updatedAt),
+          created: formatDateTime(x.createdAt),
+          updated: formatDateTime(x.updatedAt),
         }));
       return {
         columns: [
           { key: 'id', header: 'Assignment ID', render: (x) => <span className="mono">{x.id}</span> },
           { key: 'collector', header: 'Collector' },
           { key: 'date', header: 'Assignment Date' },
-          { key: 'created', header: 'Created' },
-          { key: 'updated', header: 'Updated' },
+          { key: 'created', header: 'Created At' },
+          { key: 'updated', header: 'Updated At' },
         ],
         rows,
+        summary: { total: rows.length },
       };
     }
 
@@ -264,6 +284,7 @@ export function ReportsPage() {
           { key: 'weight', header: 'Total Weight (kg)', align: 'right' },
         ],
         rows,
+        summary: { total: rows.length },
       };
     }
 
@@ -284,6 +305,7 @@ export function ReportsPage() {
             name: r.fullName,
             nic: r.nic,
             mobile: r.mobile,
+            address: r.address,
             vehicle: r.vehicleCode ?? 'No Vehicle',
             requests: String(act.length),
             completed: String(completed.length),
@@ -295,12 +317,14 @@ export function ReportsPage() {
           { key: 'name', header: 'Rider' },
           { key: 'nic', header: 'NIC', render: (x) => <span className="mono">{x.nic}</span> },
           { key: 'mobile', header: 'Mobile' },
+          { key: 'address', header: 'Address' },
           { key: 'vehicle', header: 'Assigned Vehicle' },
           { key: 'requests', header: 'Requests', align: 'right' },
           { key: 'completed', header: 'Completed', align: 'right' },
           { key: 'weight', header: 'Total Weight (kg)', align: 'right' },
         ],
         rows,
+        summary: { total: rows.length },
       };
     }
 
@@ -339,6 +363,7 @@ export function ReportsPage() {
         { key: 'weight', header: 'Total Weight (kg)', align: 'right' },
       ],
       rows,
+      summary: { total: rows.length },
     };
   }, [
     reportType,
@@ -360,23 +385,28 @@ export function ReportsPage() {
     try {
       const built = await buildReport();
       setResult(built);
-      setGeneratedFor(reportType);
     } catch (err: any) {
       setError(err.message || 'The report could not be generated.');
       setResult(null);
-      setGeneratedFor(null);
     } finally {
       setLoading(false);
     }
-  }, [loading, buildReport, reportType]);
+  }, [loading, buildReport]);
 
-  useEffect(() => {
-    setError(null);
-    setResult(null);
-    setGeneratedFor(null);
-  }, [reportType]);
+  const handleDownload = useCallback(() => {
+    if (!result || result.rows.length === 0 || loading) return;
+    const header = result.columns.map((c) => c.header);
+    const body = result.rows.map((row) => result.columns.map((c) => row[c.key] ?? ''));
+    const sheet = XLSX.utils.aoa_to_sheet([header, ...body]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, sheet, REPORT_TYPES.find((t) => t.value === reportType)?.label ?? 'Report');
+    const stamp = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(wb, `neptune-${reportType}-report-${stamp}.xlsx`);
+  }, [result, loading, reportType]);
 
   const cfg = FILTER_CONFIG[reportType];
+  const canDownload = !loading && result !== null && result.rows.length > 0;
+  const showInitial = result === null && !error && !loading;
 
   return (
     <div className="fade-in">
@@ -495,10 +525,13 @@ export function ReportsPage() {
               </FormField>
             )}
 
-            <div className="span-2">
+            <div className="span-2 form-actions-row">
               <PrimaryButton onClick={handleGenerate} loading={loading}>
                 {loading ? 'Generating…' : 'Generate Report'}
               </PrimaryButton>
+              <SecondaryButton onClick={handleDownload} disabled={!canDownload}>
+                <Download size={15} /> Download Excel
+              </SecondaryButton>
             </div>
           </div>
         </div>
@@ -508,9 +541,29 @@ export function ReportsPage() {
         <div className="card-head">
           <h3 className="card-title">
             <CalendarClock /> Results
-            {result && <span className="badge badge-slate" style={{ marginLeft: 8 }}>{result.rows.length}</span>}
+            {result && (
+              <span className="badge badge-slate" style={{ marginLeft: 8 }}>
+                {result.summary.total}
+              </span>
+            )}
           </h3>
         </div>
+        {result && result.summary.total > 0 && (
+          <div className="report-summary">
+            {result.summary.total !== null && (
+              <span>Records: {result.summary.total}</span>
+            )}
+            {typeof result.summary.weightKg === 'number' && (
+              <span>Total Weight: {result.summary.weightKg.toFixed(1)} kg</span>
+            )}
+            {result.summary.statuses &&
+              Object.entries(result.summary.statuses).map(([k, v]) => (
+                <span key={k}>
+                  {k.charAt(0) + k.slice(1).toLowerCase()}: {v}
+                </span>
+              ))}
+          </div>
+        )}
         <div className="card-body flush">
           {error ? (
             <ErrorState
@@ -518,7 +571,7 @@ export function ReportsPage() {
               message={error}
               onRetry={handleGenerate}
             />
-          ) : generatedFor !== reportType && !loading ? (
+          ) : showInitial ? (
             <div className="state">
               <div className="state-icon octagonal">
                 <BarChart3 />
