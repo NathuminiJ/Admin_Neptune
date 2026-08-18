@@ -1,0 +1,70 @@
+/* ==========================================================================
+   NEPTUNE DESIGN TOKENS
+   ========================================================================== */
+
+:root {
+  /* Brand greens */
+  --np-green-950: #0c2415;
+  --np-green-900: #12301d;
+  --np-green-800: #174528;
+  --np-green-700: #1d5a34;
+  --np-green-600: #247044;
+  --np-green-500: #2c8a52;
+  --np-green-400: #46a56b;
+  --np-green-300: #7cc494;
+  --np-green-200: #b3dcbf;
+  --np-green-100: #d8eee0;
+  --np-green-50: #eef7f1;
+
+  /* Neutrals */
+  --np-bg: #f4f8f5;
+  --np-surface: #ffffff;
+  --np-line: #dce7df;
+  --np-line-soft: #eaf1ec;
+  --np-ink: #15241b;
+  --np-ink-2: #52645a;
+  --np-ink-3: #84968b;
+  --np-placeholder: #5f7267;
+
+  /* Semantic */
+  --np-danger: #c1352b;
+  --np-danger-bg: #fbeae8;
+  --np-amber: #8a5a06;
+  --np-amber-bg: #fbf3dd;
+  --np-blue: #155a80;
+  --np-blue-bg: #e7f1f8;
+  --np-slate: #5b6661;
+  --np-slate-bg: #eef1f0;
+
+  /* Shape — soft, modern corners (octagonal accents remain a brand detail) */
+  --radius-card: 14px;
+  --radius-control: 8px;
+
+  /* Elevation */
+  --shadow-sm: 0 1px 2px rgba(18, 48, 29, 0.06);
+  --shadow-md: 0 6px 18px rgba(18, 48, 29, 0.1);
+  --shadow-lg: 0 18px 44px rgba(12, 36, 21, 0.18);
+
+  /* Typography */
+  --font-sans: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-mono: ui-monospace, 'Cascadia Mono', Consolas, 'Courier New', monospace;
+
+  /* Layout */
+  --sidebar-w: 264px;
+  --header-h: 64px;
+}
+
+/* Octagonal crop — a recurring NEPTUNE design element */
+.octagon {
+  clip-path: polygon(
+    18% 0, 82% 0, 100% 18%, 100% 82%,
+    82% 100%, 18% 100%, 0 82%, 0 18%
+  );
+}
+
+.octagon-sm {
+  clip-path: polygon(
+    25% 0, 75% 0, 100% 25%, 100% 75%,
+    75% 100%, 25% 100%, 0 75%, 0 25%
+  );
+}
