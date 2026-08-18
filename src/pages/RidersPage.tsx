@@ -147,6 +147,16 @@ export function RidersPage() {
     },
     { key: 'nic', header: 'NIC', render: (r: RiderView) => <span className="mono">{r.nic}</span> },
     { key: 'mobile', header: 'Mobile', render: (r: RiderView) => r.mobile },
+    {
+      key: 'vehicle',
+      header: 'Assigned Vehicle',
+      render: (r: RiderView) =>
+        r.vehicleCode ? (
+          <span className="mono">{r.vehicleCode}</span>
+        ) : (
+          <span className="muted">No Vehicle</span>
+        ),
+    },
     { key: 'status', header: 'Status', render: (r: RiderView) => <StatusBadge status={r.status} /> },
     {
       key: 'actions',

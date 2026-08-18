@@ -43,6 +43,8 @@ export function normalizeRider(raw: Rider): RiderView {
     nic: raw.nic,
     mobile: raw.mobile,
     address: raw.address,
+    vehicleId: raw.vehicleId ?? null,
+    vehicleCode: raw.vehicle?.vehicleCode ?? null,
     createdAt: raw.createdAt,
     updatedAt: raw.updatedAt,
   };

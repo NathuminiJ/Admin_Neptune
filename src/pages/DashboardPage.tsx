@@ -16,7 +16,7 @@ import { StatisticCard } from '../components/StatisticCard';
 import { DataTable } from '../components/DataTable';
 import { OctagonalIconContainer } from '../components/OctagonalIconContainer';
 import { api } from '../lib/api';
-import { normalizeAssignment, normalizeRequest } from '../lib/normalize';
+import { normalizeAssignment, normalizeRider, normalizeRequest } from '../lib/normalize';
 import type {
   AssignmentView,
   CollectionRequest,
@@ -67,7 +67,7 @@ export function DashboardPage() {
         ]);
         if (!cancelled) {
           setCollectors(c.map((col) => ({ ...col, loginId: col.user.loginId, status: col.user.status })));
-          setRiders(r.map((rd) => ({ ...rd, loginId: rd.user.loginId, status: rd.user.status })));
+          setRiders(r.map(normalizeRider));
           setVehicles(v);
           setAssignments(a.map(normalizeAssignment));
           setRequests(req.map(normalizeRequest));

@@ -220,6 +220,10 @@ export function RiderDetailsPage() {
                     <Phone /> {rider.mobile}
                   </div>
                 </div>
+                <div className="info-item">
+                  <div className="k">Assigned Vehicle</div>
+                  <div className="v mono normal">{rider.vehicleCode ?? 'No Vehicle'}</div>
+                </div>
               </div>
             </div>
           </div>

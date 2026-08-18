@@ -1,9 +1,10 @@
 import { UserCog } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import type { RiderView } from '../types';
+import { useCallback, useEffect, useState } from 'react';
+import type { RiderView, Vehicle } from '../types';
 import { FormField } from '../components/FormField';
 import { Modal } from '../components/Modal';
 import { PrimaryButton, SecondaryButton } from '../components/buttons';
+import { api } from '../lib/api';
 import { validateSriLankanNic, getNicHint } from '../utils/format';
 
 export interface RiderFormValues {
@@ -13,9 +14,14 @@ export interface RiderFormValues {
   nic: string;
   mobile: string;
   address: string;
+  /** Selected vehicle id; '' means no vehicle assigned. */
+  vehicleId: string;
 }
 
-export type RiderPayload = Omit<RiderFormValues, 'password'> & { password?: string };
+export type RiderPayload = Omit<RiderFormValues, 'password' | 'vehicleId'> & {
+  password?: string;
+  vehicleId?: string | null;
+};
 
 interface RiderFormModalProps {
   open: boolean;
@@ -26,6 +32,8 @@ interface RiderFormModalProps {
 
 type FormErrors = Partial<Record<keyof RiderFormValues, string>>;
 
+const NO_VEHICLE = '';
+
 const emptyForm = (): RiderFormValues => ({
   fullName: '',
   loginId: '',
@@ -33,6 +41,7 @@ const emptyForm = (): RiderFormValues => ({
   nic: '',
   mobile: '',
   address: '',
+  vehicleId: NO_VEHICLE,
 });
 
 const toValues = (r: RiderView): RiderFormValues => ({
@@ -42,6 +51,7 @@ const toValues = (r: RiderView): RiderFormValues => ({
   nic: r.nic,
   mobile: r.mobile,
   address: r.address,
+  vehicleId: r.vehicleId ?? NO_VEHICLE,
 });
 
 function isValidMobile(value: string): boolean {
@@ -54,6 +64,10 @@ export function RiderFormModal({ open, initial, onClose, onSave }: RiderFormModa
   const [errors, setErrors] = useState<FormErrors>({});
   const [saving, setSaving] = useState(false);
 
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [vehiclesLoading, setVehiclesLoading] = useState(false);
+  const [vehiclesError, setVehiclesError] = useState<string | null>(null);
+
   const isEdit = Boolean(initial);
 
   useEffect(() => {
@@ -63,6 +77,33 @@ export function RiderFormModal({ open, initial, onClose, onSave }: RiderFormModa
       setSaving(false);
     }
   }, [open, initial]);
+
+  const fetchVehicles = useCallback(async () => {
+    setVehiclesLoading(true);
+    setVehiclesError(null);
+    try {
+      const data = await api.get<Vehicle[]>('/admin/vehicles');
+      setVehicles(Array.isArray(data) ? data : []);
+    } catch (err: any) {
+      setVehiclesError(
+        err.message || 'Could not load vehicles. Close and reopen the form to retry.',
+      );
+      setVehicles([]);
+    } finally {
+      setVehiclesLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (open) fetchVehicles();
+  }, [open, fetchVehicles]);
+
+  const activeVehicles = vehicles.filter((v) => v.status === 'ACTIVE');
+  const currentVehicle = initial?.vehicleId
+    ? vehicles.find((v) => v.id === initial.vehicleId) ?? null
+    : null;
+  const showInactiveCurrent =
+    isEdit && currentVehicle && currentVehicle.status !== 'ACTIVE';
 
   const set = <K extends keyof RiderFormValues>(key: K, value: string) =>
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -96,8 +137,14 @@ export function RiderFormModal({ open, initial, onClose, onSave }: RiderFormModa
     if (Object.keys(next).length > 0) return;
     setSaving(true);
     try {
-      const payload: RiderPayload = { ...form };
+      const payload: RiderPayload = {
+        ...form,
+        vehicleId: form.vehicleId || null,
+      };
       if (isEdit && !payload.password) delete payload.password;
+      if (isEdit && payload.vehicleId === (initial?.vehicleId ?? null)) {
+        delete payload.vehicleId;
+      }
       await onSave(payload);
     } catch {
       // Errors are surfaced by the caller (toast).
@@ -187,6 +234,62 @@ export function RiderFormModal({ open, initial, onClose, onSave }: RiderFormModa
             onChange={(e) => set('address', e.target.value)}
             placeholder="e.g. 102 Galle Road, Dehiwala"
           />
+        </FormField>
+        <FormField
+          label="Assigned Vehicle"
+          hint={vehiclesLoading ? 'Loading vehicles…' : undefined}
+          error={vehiclesError ?? undefined}
+          className="span-2"
+        >
+          {vehiclesError && !vehiclesLoading ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <select className="select" disabled value={NO_VEHICLE} aria-label="Assigned Vehicle">
+                <option value={NO_VEHICLE}>Unavailable — vehicles could not be loaded</option>
+              </select>
+              <button
+                type="button"
+                className="link-btn"
+                onClick={fetchVehicles}
+                style={{ whiteSpace: 'nowrap' }}
+              >
+                Retry
+              </button>
+            </div>
+          ) : (
+            <select
+              className="select"
+              value={form.vehicleId}
+              onChange={(e) => set('vehicleId', e.target.value)}
+              disabled={vehiclesLoading}
+              aria-label="Assigned Vehicle"
+            >
+              <option value={NO_VEHICLE}>
+                {vehiclesLoading ? 'Loading vehicles…' : 'No Vehicle Assigned'}
+              </option>
+              {activeVehicles.map((v) => (
+                <option key={v.id} value={v.id}>
+                  {v.vehicleCode} — {v.vehicleType}
+                </option>
+              ))}
+              {showInactiveCurrent && currentVehicle && (
+                <option key={`${currentVehicle.id}-current`} value={currentVehicle.id} disabled>
+                  {currentVehicle.vehicleCode} — {currentVehicle.vehicleType} (inactive)
+                </option>
+              )}
+            </select>
+          )}
+          {!vehiclesLoading &&
+            !vehiclesError &&
+            activeVehicles.length === 0 &&
+            !showInactiveCurrent && (
+              <span className="field-hint">No active vehicles available</span>
+            )}
+          {showInactiveCurrent && currentVehicle && !vehiclesError && (
+            <span className="field-hint">
+              Currently assigned to {currentVehicle.vehicleCode}, which is inactive. Pick an
+              active vehicle to change the assignment.
+            </span>
+          )}
         </FormField>
       </div>
     </Modal>

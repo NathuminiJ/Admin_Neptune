@@ -75,6 +75,13 @@ export interface Rider {
   nic: string;
   mobile: string;
   address: string;
+  vehicleId: string | null;
+  vehicle: {
+    id: string;
+    vehicleCode: string;
+    vehicleType: string;
+    status: VehicleStatus;
+  } | null;
   createdAt: string;
   updatedAt: string;
   user: UserAccount;
@@ -210,6 +217,8 @@ export interface RiderView {
   nic: string;
   mobile: string;
   address: string;
+  vehicleId: string | null;
+  vehicleCode: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -272,6 +281,7 @@ export interface CreateRiderPayload {
   nic: string;
   mobile: string;
   address: string;
+  vehicleId: string | null;
 }
 
 export type UpdateRiderPayload = Partial<CreateRiderPayload>;
