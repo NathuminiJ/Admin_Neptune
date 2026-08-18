@@ -1,4 +1,5 @@
 import {
+  BarChart3,
   CalendarDays,
   ClipboardList,
   LayoutDashboard,
@@ -28,6 +29,7 @@ const NAV_ITEMS = [
   { to: '/assignments', label: 'Assignments', icon: CalendarDays },
   { to: '/requests', label: 'Collection Requests', icon: ClipboardList },
   { to: '/leaderboard', label: 'Leaderboard', icon: Trophy },
+  { to: '/reports', label: 'Reports', icon: BarChart3 },
   { to: '/settings', label: 'Settings', icon: Settings },
 ];
 

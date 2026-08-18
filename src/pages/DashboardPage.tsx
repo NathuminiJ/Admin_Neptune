@@ -1,4 +1,5 @@
 import {
+  BarChart3,
   ClipboardList,
   ClipboardPlus,
   Clock,
@@ -465,6 +466,19 @@ export function DashboardPage() {
               <span>
                 <span className="qa-label">Create Assignment</span>
                 <div className="qa-sub">Plan a daily route</div>
+              </span>
+            </button>
+            <button
+              type="button"
+              className="qa-btn"
+              onClick={() => navigate('/reports')}
+            >
+              <OctagonalIconContainer tone="slate" small>
+                <BarChart3 />
+              </OctagonalIconContainer>
+              <span>
+                <span className="qa-label">View Reports</span>
+                <div className="qa-sub">Generate operational reports</div>
               </span>
             </button>
           </div>

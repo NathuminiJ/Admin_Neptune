@@ -14,6 +14,7 @@ import { AssignmentDetailsPage } from './pages/AssignmentDetailsPage';
 import { CollectionRequestsPage } from './pages/CollectionRequestsPage';
 import { RequestDetailsPage } from './pages/RequestDetailsPage';
 import { LeaderboardPage } from './pages/LeaderboardPage';
+import { ReportsPage } from './pages/ReportsPage';
 import { SettingsPage } from './pages/SettingsPage';
 
 function RequireAuth() {
@@ -44,6 +45,7 @@ export default function App() {
           <Route path="/requests" element={<CollectionRequestsPage />} />
           <Route path="/requests/:id" element={<RequestDetailsPage />} />
           <Route path="/leaderboard" element={<LeaderboardPage />} />
+          <Route path="/reports" element={<ReportsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>

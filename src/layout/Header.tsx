@@ -31,6 +31,7 @@ function pageHeading(pathname: string): { title: string; subtitle: string } {
     return pathname.length > '/requests'.length
       ? { title: 'Collection Request', subtitle: 'Request NQ details' }
       : { title: 'Collection Requests', subtitle: 'All collection requests' };
+  if (pathname.startsWith('/reports')) return { title: 'Reports', subtitle: 'Operational and activity reports' };
   if (pathname.startsWith('/settings')) return { title: 'Settings', subtitle: 'Admin preferences' };
   return { title: 'NEPTUNE', subtitle: 'Waste collection management' };
 }
