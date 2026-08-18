@@ -1,0 +1,900 @@
+# NEPTUNE ADMIN FRONTEND — FULL API ALIGNMENT AND REPAIR
+
+You are working inside the NEPTUNE Admin Dashboard frontend project.
+
+Your task is to make the Admin Dashboard work correctly with the EXISTING NEPTUNE backend and PostgreSQL data.
+
+The backend project is separate.
+
+The backend is the source of truth.
+
+DO NOT invent backend fields.
+
+DO NOT redesign the backend.
+
+DO NOT create fake data.
+
+DO NOT use mock data as a substitute for API data.
+
+---
+
+# CRITICAL OBJECTIVE
+
+The Admin Dashboard must display and manipulate REAL data from the existing backend API.
+
+Every management operation must actually persist to PostgreSQL through the backend.
+
+The dashboard must not merely look functional.
+
+A button that says "Saved" without a successful backend request is NOT acceptable.
+
+---
+
+# SOURCE OF TRUTH
+
+Use this order of authority:
+
+1. Actual backend source code
+2. Prisma/database schema
+3. Backend DTOs/controllers/services
+4. NEPTUNE_API_HANDOVER.md
+5. Existing project requirements
+6. Existing Admin frontend assumptions
+
+If the frontend conflicts with the backend:
+
+FIX THE FRONTEND.
+
+Do not modify the backend simply because the frontend expects a field that does not exist.
+
+---
+
+# VERY IMPORTANT — DO NOT TOUCH BACKEND
+
+This OpenCode project is the ADMIN FRONTEND project.
+
+Do not attempt to modify the backend repository.
+
+Do not create backend files inside this project.
+
+Do not redesign API endpoints.
+
+Do not invent API endpoints.
+
+Use the existing backend API.
+
+---
+
+# ACTUAL DATA MODEL
+
+The frontend must align with the actual backend entities.
+
+## Collector
+
+Use actual fields:
+
+* id
+* userId
+* fullName
+* nic
+* mobile
+* address
+* guardianName
+* guardianMobile
+* qrToken
+* createdAt
+* updatedAt
+
+REMOVE frontend assumptions such as:
+
+* area
+* lastLogin
+
+unless the backend actually provides them.
+
+---
+
+## Rider
+
+Use:
+
+* id
+* userId
+* fullName
+* nic
+* mobile
+* address
+* createdAt
+* updatedAt
+
+DO NOT assume Rider has:
+
+* vehicleType
+* vehicleNumber
+* vehicleColour
+* assignedVehicleId
+
+Those are not part of the actual Rider model.
+
+Remove them from Rider create/edit forms.
+
+Do not send them to the backend.
+
+---
+
+## Vehicle
+
+Use:
+
+* id
+* vehicleCode
+* vehicleType
+* status
+* createdAt
+* updatedAt
+
+Vehicle creation must send only the fields the backend accepts.
+
+Do NOT send `status` during creation if the backend sets the default status.
+
+Status changes must use the proper status endpoint.
+
+---
+
+## Daily Assignment
+
+Use:
+
+* id
+* collectorId
+* assignmentDate
+* createdAt
+* updatedAt
+
+The frontend currently uses:
+
+`date`
+
+Change the frontend to use:
+
+`assignmentDate`
+
+Do NOT send:
+
+* area
+* status
+
+because they are not part of the actual assignment model.
+
+---
+
+## Collection Request
+
+Use:
+
+* id
+* collectorId
+* riderId
+* latitude
+* longitude
+* status
+* qrVerified
+* requestedAt
+* acceptedAt
+* completedAt
+* cancelledAt
+* createdAt
+* updatedAt
+
+Do NOT invent:
+
+* assignmentId
+* area
+* fake location object
+* fake totalWeight fields
+
+Use latitude/longitude correctly.
+
+---
+
+## Collection
+
+Use:
+
+* id
+* collectionRequestId
+* collectorId
+* riderId
+* vehicleId
+* weightKg
+* collectedAt
+* createdAt
+* updatedAt
+
+Collection information should come from the real backend response.
+
+---
+
+# FIRST TASK — INSPECT BEFORE EDITING
+
+Before changing code:
+
+1. Inspect all frontend files.
+2. Inspect API service files.
+3. Inspect TypeScript types.
+4. Inspect all pages.
+5. Inspect all forms/modals.
+6. Inspect authentication.
+7. Inspect dashboard statistics.
+8. Inspect collection request normalization.
+9. Inspect mock data.
+10. Inspect environment variables.
+11. Compare every API call with the actual backend API contract.
+
+Do not immediately rewrite the application.
+
+Identify all mismatches first.
+
+---
+
+# FIX TYPES FIRST
+
+The existing frontend TypeScript interfaces contain fields that do not exist in the backend.
+
+Correct the types so they accurately represent backend responses.
+
+For example, replace incorrect:
+
+`createdDate`
+
+with:
+
+`createdAt`
+
+Replace incorrect:
+
+`date`
+
+with:
+
+`assignmentDate`
+
+Remove fake fields such as:
+
+`area`
+
+`lastLogin`
+
+`assignedVehicleId`
+
+`assignedRiderId`
+
+`assignmentId`
+
+where they are not supported by the backend.
+
+Do not simply use `any` to hide type problems.
+
+Do not use `as any` to bypass API mismatches.
+
+Use accurate interfaces/types.
+
+---
+
+# FIX COLLECTOR MANAGEMENT
+
+Collector list/create/edit/status must work with real backend data.
+
+Verify:
+
+GET /admin/collectors
+
+GET /admin/collectors/:id
+
+POST /admin/collectors
+
+PATCH /admin/collectors/:id
+
+PATCH /admin/collectors/:id/status
+
+Fix:
+
+* field mappings
+* date display
+* validation
+* create payload
+* update payload
+* loading state
+* error state
+* success handling
+
+Do not display `area` if backend does not provide it.
+
+Do not display fake `lastLogin`.
+
+---
+
+# FIX RIDER MANAGEMENT
+
+This is a major repair.
+
+The Rider form currently contains vehicle-related fields that do not belong to the backend Rider model.
+
+Remove from Rider creation/editing:
+
+* vehicleType
+* vehicleNumber
+* vehicleColour
+* assignedVehicleId
+
+The create payload should match the backend DTO.
+
+It should contain only the supported Rider fields.
+
+Do not send unsupported fields.
+
+Make sure:
+
+POST /admin/riders
+
+and:
+
+PATCH /admin/riders/:id
+
+work successfully.
+
+Also fix frontend validation so it matches backend validation.
+
+The backend requires an 8-character minimum password where applicable.
+
+Do not tell users 4 characters is enough.
+
+---
+
+# FIX VEHICLE MANAGEMENT
+
+Vehicle creation currently sends `status`.
+
+Do not send unsupported fields.
+
+Creation should use the actual backend contract.
+
+Status changes should use:
+
+PATCH /admin/vehicles/:id/status
+
+Fix:
+
+* list
+* details
+* create
+* edit
+* activate/deactivate
+* validation
+* errors
+* loading states
+
+Do not create a fake Rider ↔ Vehicle permanent assignment UI.
+
+A vehicle is associated with a Collection through `vehicleId`, not permanently assigned to a Rider.
+
+---
+
+# FIX DAILY ASSIGNMENTS
+
+This is a critical repair.
+
+The current frontend uses:
+
+`date`
+
+but the backend uses:
+
+`assignmentDate`
+
+Change all relevant frontend types, forms, table columns, filters, API payloads, and details pages.
+
+Correct create payload:
+
+```text
+{
+  collectorId,
+  assignmentDate
+}
+```
+
+Do NOT send:
+
+* area
+* status
+
+Do not display fake assignment statuses.
+
+Use the real assignment data.
+
+Make:
+
+GET /admin/assignments
+
+GET /admin/assignments/:id
+
+POST /admin/assignments
+
+PATCH /admin/assignments/:id
+
+DELETE /admin/assignments/:id
+
+work correctly.
+
+---
+
+# FIX DASHBOARD STATISTICS
+
+The dashboard must use REAL API data.
+
+Check every calculation.
+
+A major existing bug is that the frontend checks:
+
+`assignment.date`
+
+instead of:
+
+`assignment.assignmentDate`
+
+Fix this.
+
+Dashboard values should be derived from actual API responses.
+
+Do not hardcode values.
+
+Do not create fake statistics.
+
+Do not use mock data.
+
+---
+
+# FIX COLLECTION REQUESTS
+
+The Collection Requests page must display actual backend records.
+
+Correct field mappings:
+
+`requestedAt`
+
+`acceptedAt`
+
+`completedAt`
+
+`cancelledAt`
+
+`latitude`
+
+`longitude`
+
+`status`
+
+`qrVerified`
+
+`collection.weightKg`
+
+`collection.collectedAt`
+
+where available.
+
+Remove fake:
+
+`assignmentId`
+
+Do not invent a relationship between CollectionRequest and DailyAssignment.
+
+---
+
+# FIX COLLECTION REQUEST DETAILS
+
+The current details page expects frontend fields that don't match the backend.
+
+Do not directly assume:
+
+* createdDate
+* location
+* totalWeight
+* collectionDate
+* assignmentId
+
+Instead, correctly map the real backend response.
+
+If the backend response is nested, use the nested structure.
+
+For example, collection information should come from the actual `collection` relation where provided.
+
+Show:
+
+* request ID
+* collector
+* rider
+* request status
+* QR verification status
+* latitude
+* longitude
+* requested time
+* accepted time
+* completed time
+* cancelled time
+* collection weight
+* vehicle
+* collection date/time
+
+Only show values that actually exist.
+
+---
+
+# FIX "TODAY" FILTER
+
+There is currently a hardcoded date:
+
+`2026-08-16`
+
+This is WRONG.
+
+Remove all hardcoded business dates.
+
+The Today filter must dynamically calculate the current local date.
+
+Do not use UTC conversions carelessly for business dates.
+
+The application is used in Sri Lanka.
+
+Use a consistent local-date utility.
+
+---
+
+# FIX DATE HANDLING
+
+Do not repeatedly use:
+
+`new Date().toISOString().slice(0, 10)`
+
+without considering timezone/business-date semantics.
+
+Create one reliable date utility for:
+
+* today's date
+* displaying dates
+* displaying date/time
+* assignment dates
+* filtering
+
+Do not introduce off-by-one-day bugs.
+
+---
+
+# FIX SETTINGS
+
+The current Settings page contains fake behavior such as:
+
+showing "Admin profile updated" without making an API request.
+
+Do NOT pretend data was saved.
+
+Inspect the actual backend.
+
+If Admin profile editing is not supported by the backend:
+
+DO NOT fake it.
+
+Either:
+
+1. Remove unsupported editing controls, or
+2. Make the UI clearly read-only for information that cannot be edited.
+
+Do not create fake API calls.
+
+Do not store fake admin profile data locally and pretend it is PostgreSQL data.
+
+---
+
+# FIX NOTIFICATIONS
+
+There is no established notification API in the backend.
+
+Do not create fake notification data.
+
+Do not display fake unread counts.
+
+If notifications are not supported:
+
+Remove or disable the notification feature cleanly rather than pretending it works.
+
+---
+
+# FIX REMEMBER ME
+
+The current Remember Me checkbox does not actually change authentication persistence.
+
+Do not leave a fake checkbox.
+
+Either implement it correctly using the existing authentication architecture without weakening security, or remove it.
+
+Do not claim it works if it does not.
+
+---
+
+# FIX AUTHENTICATION ERROR HANDLING
+
+Authentication should:
+
+* login using the actual backend
+* store access token
+* send Bearer token
+* load `/auth/me`
+* protect admin routes
+* handle expired/invalid JWT
+* handle 401
+* handle 403
+
+When the API returns 401:
+
+Clear the invalid session appropriately and return the user to login.
+
+When the API returns 403:
+
+Show an appropriate forbidden state.
+
+Do not silently swallow authentication errors.
+
+---
+
+# REMOVE REAL MOCK DOMAIN DATA
+
+Search the entire project for:
+
+* mock collectors
+* mock riders
+* mock vehicles
+* mock assignments
+* mock requests
+* hardcoded statistics
+* hardcoded dates
+* fake API responses
+* `setTimeout` used to simulate saves
+* placeholder success messages
+
+Remove or replace actual mock business data.
+
+UI constants are allowed if they are genuinely static presentation values.
+
+Do not remove legitimate icons, styles, or UI constants merely because they are in a file named `mock.ts`.
+
+---
+
+# API SERVICE LAYER
+
+Centralize API calls where practical.
+
+Use the existing API base URL:
+
+`VITE_API_BASE_URL`
+
+Do not hardcode production URLs into components.
+
+Do not expose database credentials.
+
+The frontend must NEVER contain:
+
+* DATABASE_URL
+* PostgreSQL password
+* Prisma credentials
+* JWT signing secret
+* Supabase service-role secret
+
+Only the public backend API URL belongs in the frontend environment.
+
+---
+
+# ERROR HANDLING
+
+Every API operation must properly handle:
+
+200/201 success
+
+400 validation errors
+
+401 unauthorized
+
+403 forbidden
+
+404 not found
+
+409 conflict
+
+500 server errors
+
+Do not show "success" unless the API actually succeeds.
+
+Show useful error messages.
+
+Do not hide errors with empty catch blocks.
+
+---
+
+# LOADING AND EMPTY STATES
+
+Every API-driven page must have:
+
+* loading state
+* empty state
+* error state
+* successful state
+
+Do not confuse:
+
+"API failed"
+
+with:
+
+"No data exists."
+
+For example, if `/admin/collectors` returns 500, do not display:
+
+"No collectors found."
+
+Display an actual error state.
+
+---
+
+# REAL DATABASE DATA REQUIREMENT
+
+All Admin Dashboard business information must come from:
+
+Admin Frontend
+↓
+NestJS Backend
+↓
+PostgreSQL
+
+Do not connect the frontend directly to PostgreSQL.
+
+Do not connect the frontend directly to Supabase database tables.
+
+Do not bypass the backend.
+
+---
+
+# UI REQUIREMENT
+
+Keep the existing Neptune design unless a UI change is required to remove an invalid feature.
+
+Do not redesign the whole dashboard.
+
+Do not replace working components unnecessarily.
+
+Focus on correctness and API integration.
+
+---
+
+# IMPORTANT — DO NOT INVENT FEATURES
+
+Do not add:
+
+* payroll
+* earnings
+* salary
+* bonuses
+* bags
+* bins
+* marketplace
+* advertising
+* social features
+* household stops
+* permanent Rider vehicle assignment
+* collector area
+* assignment area
+* assignment status
+* fake notifications
+* fake admin profile backend
+* unrelated analytics
+
+Only support actual NEPTUNE functionality.
+
+---
+
+# TEST EVERYTHING
+
+After repairs:
+
+1. Run npm install if necessary.
+2. Run TypeScript type checking.
+3. Run production build.
+4. Fix all TypeScript errors.
+5. Fix all API contract errors.
+6. Test login.
+7. Test Collector CRUD.
+8. Test Collector status.
+9. Test Rider CRUD.
+10. Test Rider status.
+11. Test Vehicle CRUD.
+12. Test Vehicle status.
+13. Test Assignment CRUD.
+14. Test Collection Request list.
+15. Test Collection Request details.
+16. Test Dashboard.
+17. Test Leaderboard.
+18. Test authentication expiry.
+19. Test API error states.
+20. Test with REAL backend data.
+
+Do not declare the task complete merely because the frontend builds.
+
+---
+
+# FINAL VERIFICATION
+
+Search the frontend source for these invalid fields:
+
+* area
+* lastLogin
+* assignedVehicleId
+* assignedRiderId
+* assignmentId
+* assignment.status
+* assignment.area
+* createdDate
+* date
+
+For each occurrence, determine whether it is genuinely supported by the backend.
+
+Do not blindly remove legitimate unrelated uses of words such as `date`.
+
+The goal is to eliminate incorrect backend-domain assumptions, not blindly delete strings.
+
+Also search for:
+
+* hardcoded dates
+* mock data
+* fake success messages
+* fake API calls
+* `setTimeout` pretending to save
+* `as any`
+* `@ts-ignore`
+
+Remove these where they are hiding actual integration problems.
+
+---
+
+# FINAL REPORT
+
+When finished, report:
+
+1. All files changed.
+2. All API mismatches fixed.
+3. All fake/mocked business data removed.
+4. All incorrect frontend fields removed or corrected.
+5. All CRUD operations tested.
+6. Dashboard verified against real API data.
+7. Collection request details verified.
+8. Assignment date handling verified.
+9. Authentication verified.
+10. Production build result.
+11. Any remaining issue that is genuinely a BACKEND issue.
+
+Do not claim something works unless you actually tested it.
+
+The goal is not to make the UI look correct.
+
+The goal is:
+
+REAL DATABASE
+↓
+REAL BACKEND API
+↓
+CORRECT FRONTEND TYPES
+↓
+CORRECT UI
+↓
+REAL PERSISTED ADMIN OPERATIONS
+
+No fake data.
+No invented fields.
+No fake success.
+No backend redesign.
