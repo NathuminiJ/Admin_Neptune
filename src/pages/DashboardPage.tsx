@@ -4,6 +4,7 @@ import {
   ClipboardPlus,
   Clock,
   Plus,
+  Recycle,
   Trophy,
   Truck,
   UserCheck,
@@ -50,6 +51,7 @@ export function DashboardPage() {
   const [requests, setRequests] = useState<RequestView[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [leaderboardPeriod, setLeaderboardPeriod] = useState('all');
+  const [totalCollections, setTotalCollections] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
   const today = localToday();
@@ -77,6 +79,23 @@ export function DashboardPage() {
         console.error('Dashboard API error:', error);
       } finally {
         if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const stats = await api.get<{ totalCollections?: number }>('/admin/dashboard/stats');
+        if (!cancelled && typeof stats.totalCollections === 'number') {
+          setTotalCollections(stats.totalCollections);
+        } else if (!cancelled) {
+          setTotalCollections(null);
+        }
+      } catch {
+        if (!cancelled) setTotalCollections(null);
       }
     })();
     return () => { cancelled = true; };
@@ -217,6 +236,14 @@ export function DashboardPage() {
           tone="amber"
           hint="needs action"
           hintTone="down"
+        />
+        <StatisticCard
+          label="Total Collections"
+          value={totalCollections === null ? '—' : totalCollections}
+          icon={Recycle}
+          tone="slate"
+          hint={totalCollections === null ? 'statistics unavailable' : 'all recorded'}
+          hintTone={totalCollections === null ? 'down' : 'flat'}
         />
       </div>
 
