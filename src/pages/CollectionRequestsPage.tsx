@@ -1,6 +1,7 @@
-import { Eye } from 'lucide-react';
+import { Eye, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ConfirmationDialog } from '../components/ConfirmationDialog';
 import { DataTable } from '../components/DataTable';
 import type { Column } from '../components/DataTable';
 import { EmptyState } from '../components/states';
@@ -56,6 +57,7 @@ export function CollectionRequestsPage() {
   const [collectorFilter, setCollectorFilter] = useState('ALL');
   const [riderFilter, setRiderFilter] = useState('ALL');
   const [page, setPage] = useState(1);
+  const [pendingDelete, setPendingDelete] = useState<RequestView | null>(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -72,6 +74,24 @@ export function CollectionRequestsPage() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  const confirmDelete = async () => {
+    if (!pendingDelete) return;
+    try {
+      await api.delete(`/admin/collection-requests/${pendingDelete.id}`);
+      toast.success(`Collection request ${pendingDelete.id} permanently deleted`);
+      fetchData();
+    } catch (err: any) {
+      if (err?.status === 409) {
+        toast.error(
+          'This collection request cannot be deleted because it has related collection history.',
+        );
+      } else {
+        toast.error(err.message || 'Failed to delete collection request');
+      }
+    }
+    setPendingDelete(null);
+  };
 
   const collectorOptions = useMemo(() => {
     const map = new Map<string, string>();
@@ -174,12 +194,19 @@ export function CollectionRequestsPage() {
     {
       key: 'actions',
       header: 'Actions',
-      width: '70px',
+      width: '110px',
       align: 'right',
       render: (r: RequestView) => (
         <span className="actions-cell" onClick={(e) => e.stopPropagation()}>
           <IconButton label="View details" onClick={() => navigate(`/requests/${r.id}`)}>
             <Eye size={16} />
+          </IconButton>
+          <IconButton
+            label="Delete"
+            className="delete"
+            onClick={() => setPendingDelete(r)}
+          >
+            <Trash2 size={15} />
           </IconButton>
         </span>
       ),
@@ -288,6 +315,16 @@ export function CollectionRequestsPage() {
           <Pagination page={page} pageSize={PAGE_SIZE} total={filtered.length} onChange={setPage} />
         )}
       </div>
+
+      <ConfirmationDialog
+        open={pendingDelete !== null}
+        title="Delete collection request"
+        message={`Are you sure you want to permanently delete collection request ${pendingDelete?.id ?? ''}? This action is permanent and cannot be undone. If the request has related collection history, the delete will be blocked.`}
+        confirmLabel="Delete"
+        destructive
+        onConfirm={confirmDelete}
+        onCancel={() => setPendingDelete(null)}
+      />
     </div>
   );
 }
