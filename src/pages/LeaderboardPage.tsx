@@ -7,10 +7,12 @@ import { FilterDropdown } from '../components/FilterDropdown';
 import { api } from '../lib/api';
 import type { LeaderboardEntry } from '../types';
 import { formatWeight } from '../utils/format';
+import { formatDateKey, localToday } from '../utils/dates';
 
 const PERIOD_OPTIONS = [
   { value: 'all', label: 'All Time' },
   { value: 'month', label: 'This Month' },
+  { value: 'date', label: 'Specific Date' },
 ];
 
 function rankBadge(rank: number) {
@@ -47,14 +49,30 @@ export function LeaderboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [period, setPeriod] = useState('all');
+  const [date, setDate] = useState('');
+
+  const handlePeriodChange = (next: string) => {
+    setPeriod(next);
+    if (next === 'date' && !date) {
+      setDate(localToday());
+    }
+  };
 
   const fetchLeaderboard = useCallback(async () => {
+    if (period === 'date' && !date) {
+      setEntries([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError(null);
+    setEntries([]);
     try {
       const path =
         period === 'month'
           ? '/admin/leaderboard?period=month'
+          : period === 'date'
+          ? `/admin/leaderboard?date=${date}`
           : '/admin/leaderboard';
       const data = await api.get<LeaderboardEntry[]>(path);
       setEntries(data);
@@ -63,7 +81,7 @@ export function LeaderboardPage() {
     } finally {
       setLoading(false);
     }
-  }, [period]);
+  }, [period, date]);
 
   useEffect(() => {
     fetchLeaderboard();
@@ -71,9 +89,17 @@ export function LeaderboardPage() {
 
   const description = useMemo(() => {
     if (loading) return 'Loading leaderboard…';
-    if (entries.length === 0) return 'No records found';
-    return `${entries.length} collector${entries.length !== 1 ? 's' : ''} ranked · ${period === 'month' ? 'This Month' : 'All Time'}`;
-  }, [loading, entries.length, period]);
+    if (period === 'date' && !date) return 'Select a date to view the leaderboard.';
+    if (entries.length === 0) {
+      return period === 'date'
+        ? `No collections found for ${formatDateKey(date)}`
+        : 'No records found';
+    }
+    const ranked = `${entries.length} collector${entries.length !== 1 ? 's' : ''} ranked`;
+    if (period === 'month') return `${ranked} · This Month`;
+    if (period === 'date') return `${ranked} · ${formatDateKey(date)}`;
+    return `${ranked} · All Time`;
+  }, [loading, entries.length, period, date]);
 
   const columns: Column<LeaderboardEntry>[] = [
     {
@@ -125,8 +151,17 @@ export function LeaderboardPage() {
           label="Period"
           value={period}
           options={PERIOD_OPTIONS}
-          onChange={setPeriod}
+          onChange={handlePeriodChange}
         />
+        {period === 'date' && (
+          <input
+            type="date"
+            className="input"
+            style={{ maxWidth: 180 }}
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+          />
+        )}
       </div>
 
       {loading ? (
@@ -142,11 +177,25 @@ export function LeaderboardPage() {
         </div>
       ) : entries.length === 0 ? (
         <div className="table-card">
-          <EmptyState
-            icon="inbox"
-            title="No completed collections yet"
-            description="Leaderboard rankings will appear once collectors start completing collections."
-          />
+          {period === 'date' && !date ? (
+            <EmptyState
+              icon="inbox"
+              title="Select a date"
+              description="Pick a date above to view leaderboard rankings for that specific day."
+            />
+          ) : period === 'date' ? (
+            <EmptyState
+              icon="inbox"
+              title={`No collections found for ${formatDateKey(date)}.`}
+              description="Leaderboard rankings for this date will appear once collectors complete collections on that day."
+            />
+          ) : (
+            <EmptyState
+              icon="inbox"
+              title="No completed collections yet"
+              description="Leaderboard rankings will appear once collectors start completing collections."
+            />
+          )}
         </div>
       ) : (
         <div className="table-card">
