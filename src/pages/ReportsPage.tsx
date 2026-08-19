@@ -296,10 +296,6 @@ export function ReportsPage() {
             (x) => x.rider?.id === r.id && inDateRange(x.requestedAt),
           );
           const completed = act.filter((x) => x.status === 'COMPLETED');
-          const weight = completed.reduce(
-            (sum, x) => sum + (x.collection?.weightKg ?? 0),
-            0,
-          );
           return {
             id: r.id,
             name: r.fullName,
@@ -309,7 +305,6 @@ export function ReportsPage() {
             vehicle: r.vehicleCode ?? 'No Vehicle',
             requests: String(act.length),
             completed: String(completed.length),
-            weight: formatWeight(weight),
           };
         });
       return {
@@ -321,7 +316,6 @@ export function ReportsPage() {
           { key: 'vehicle', header: 'Assigned Vehicle' },
           { key: 'requests', header: 'Requests', align: 'right' },
           { key: 'completed', header: 'Completed', align: 'right' },
-          { key: 'weight', header: 'Total Weight (kg)', align: 'right' },
         ],
         rows,
         summary: { total: rows.length },
