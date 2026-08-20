@@ -111,7 +111,8 @@ export function CollectorDetailsPage() {
     const next = collector.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
     try {
       await api.patch(`/admin/collectors/${collector.id}/status`, { status: next });
-      setCollector((prev) => (prev ? { ...prev, status: next } : prev));
+      const fresh = await api.get<Collector>(`/admin/collectors/${collector.id}`);
+      setCollector(normalizeCollector(fresh));
       setToggleOpen(false);
       toast.success(
         next === 'ACTIVE'

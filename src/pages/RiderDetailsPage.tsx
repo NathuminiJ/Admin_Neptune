@@ -110,7 +110,8 @@ export function RiderDetailsPage() {
     const next = rider.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
     try {
       await api.patch(`/admin/riders/${rider.id}/status`, { status: next });
-      setRider((prev) => (prev ? { ...prev, status: next } : prev));
+      const fresh = await api.get<Rider>(`/admin/riders/${rider.id}`);
+      setRider(normalizeRider(fresh));
       setToggleOpen(false);
       toast.success(
         next === 'ACTIVE' ? `${rider.fullName} activated` : `${rider.fullName} deactivated`,
