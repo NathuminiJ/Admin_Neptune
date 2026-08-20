@@ -51,7 +51,6 @@ export function DashboardPage() {
   const [requests, setRequests] = useState<RequestView[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [leaderboardPeriod, setLeaderboardPeriod] = useState('all');
-  const [totalCollections, setTotalCollections] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
   const today = localToday();
@@ -88,23 +87,6 @@ export function DashboardPage() {
     let cancelled = false;
     (async () => {
       try {
-        const stats = await api.get<{ totalCollections?: number }>('/admin/dashboard/stats');
-        if (!cancelled && typeof stats.totalCollections === 'number') {
-          setTotalCollections(stats.totalCollections);
-        } else if (!cancelled) {
-          setTotalCollections(null);
-        }
-      } catch {
-        if (!cancelled) setTotalCollections(null);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
         const path =
           leaderboardPeriod === 'month'
             ? '/admin/leaderboard?period=month'
@@ -125,6 +107,11 @@ export function DashboardPage() {
   }, [requests]);
 
   const totalRequests = requests.length;
+
+  const totalCollections = useMemo(
+    () => requests.filter((r) => r.collection != null).length,
+    [requests],
+  );
 
   const stats = useMemo(
     () => ({
@@ -239,11 +226,11 @@ export function DashboardPage() {
         />
         <StatisticCard
           label="Total Collections"
-          value={totalCollections === null ? '—' : totalCollections}
+          value={totalCollections}
           icon={Recycle}
           tone="slate"
-          hint={totalCollections === null ? 'statistics unavailable' : 'all recorded'}
-          hintTone={totalCollections === null ? 'down' : 'flat'}
+          hint="all recorded"
+          hintTone="flat"
         />
       </div>
 
