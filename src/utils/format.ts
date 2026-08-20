@@ -57,19 +57,12 @@ export function colourHex(value: string): string {
 /**
  * Sri Lankan NIC (National Identity Card) validation.
  *
- * Supports both old and new formats:
+ * Supports exactly two formats:
  *
- * OLD FORMAT (pre-2016): 9 digits + V or X
- *   - First 2 digits: Birth year (last 2 digits)
- *   - Next 3 digits: Day of year (001-366)
- *   - Next 4 digits: Sequence number
- *   - Last character: V (male) or X (female)
+ * OLD FORMAT (pre-2016): 9 digits + V or X (lowercase accepted)
+ * NEW FORMAT (2016+):     exactly 12 digits
  *
- * NEW FORMAT (2016+): 12 digits
- *   - First 4 digits: Birth year (YYYY)
- *   - Next 3 digits: Day of year (001-366)
- *   - Next 4 digits: Sequence number
- *   - Last digit: Check digit
+ * Equivalent rule: ^(?:\d{9}[VvXx]|\d{12})$
  */
 export interface NicValidationResult {
   valid: boolean;
@@ -79,121 +72,37 @@ export interface NicValidationResult {
   error?: string;
 }
 
+const NIC_MATCH_REGEX = /^\d{9}[VvXx]$|^\d{12}$/;
+
+export const NIC_INVALID_MESSAGE =
+  'Enter a valid NIC: 12 digits, or 9 digits followed by V or X.';
+
 export function validateSriLankanNic(nic: string): NicValidationResult {
-  const trimmed = nic.trim().toUpperCase();
+  const trimmed = nic.trim();
 
   if (!trimmed) {
     return { valid: false, format: null, error: 'NIC is required' };
   }
 
-  // New format: 12 digits
-  const newFormatRegex = /^\d{12}$/;
-  // Old format: 9 digits + V or X
-  const oldFormatRegex = /^\d{9}[VX]$/;
-
-  if (newFormatRegex.test(trimmed)) {
-    return validateNewFormat(trimmed);
+  if (NIC_MATCH_REGEX.test(trimmed)) {
+    return {
+      valid: true,
+      format: /^\d{9}[VvXx]$/.test(trimmed) ? 'OLD' : 'NEW',
+    };
   }
 
-  if (oldFormatRegex.test(trimmed)) {
-    return validateOldFormat(trimmed);
-  }
-
-  return {
-    valid: false,
-    format: null,
-    error: 'Invalid NIC format. Use 9 digits + V/X (old) or 12 digits (new)',
-  };
+  return { valid: false, format: null, error: NIC_INVALID_MESSAGE };
 }
 
-function validateNewFormat(nic: string): NicValidationResult {
-  const year = parseInt(nic.substring(0, 4), 10);
-  const dayOfYear = parseInt(nic.substring(4, 7), 10);
-
-  // Validate birth year (reasonable range)
-  const currentYear = new Date().getFullYear();
-  if (year < 1920 || year > currentYear) {
-    return {
-      valid: false,
-      format: 'NEW',
-      error: `Birth year must be between 1920 and ${currentYear}`,
-    };
-  }
-
-  // Validate day of year
-  if (dayOfYear < 1 || dayOfYear > 366) {
-    return {
-      valid: false,
-      format: 'NEW',
-      error: 'Day of year must be between 001 and 366',
-    };
-  }
-
-  // Check if day is valid for the specific year (leap year handling)
-  const isLeapYear = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
-  const maxDay = isLeapYear ? 366 : 365;
-  if (dayOfYear > maxDay) {
-    return {
-      valid: false,
-      format: 'NEW',
-      error: `Day ${dayOfYear} is invalid for year ${year}`,
-    };
-  }
-
-  return {
-    valid: true,
-    format: 'NEW',
-    birthYear: year,
-  };
-}
-
-function validateOldFormat(nic: string): NicValidationResult {
-  const lastChar = nic.charAt(9); // V or X
-  const yearDigits = parseInt(nic.substring(0, 2), 10);
-  const dayOfYear = parseInt(nic.substring(2, 5), 10);
-
-  // Determine birth year (assume 1900s for < 50, 2000s for >= 50)
-  const birthYear = yearDigits < 50 ? 1900 + yearDigits : 2000 + yearDigits;
-
-  // Validate birth year
-  const currentYear = new Date().getFullYear();
-  if (birthYear < 1920 || birthYear > currentYear) {
-    return {
-      valid: false,
-      format: 'OLD',
-      error: `Birth year must be between 1920 and ${currentYear}`,
-    };
-  }
-
-  // Validate day of year
-  if (dayOfYear < 1 || dayOfYear > 366) {
-    return {
-      valid: false,
-      format: 'OLD',
-      error: 'Day of year must be between 001 and 366',
-    };
-  }
-
-  // Check if day is valid for the specific year (leap year handling)
-  const isLeapYear = (birthYear % 4 === 0 && birthYear % 100 !== 0) || birthYear % 400 === 0;
-  const maxDay = isLeapYear ? 366 : 365;
-  if (dayOfYear > maxDay) {
-    return {
-      valid: false,
-      format: 'OLD',
-      error: `Day ${dayOfYear} is invalid for year ${birthYear}`,
-    };
-  }
-
-  // V = male, X = female
-  const gender = lastChar === 'V' ? 'MALE' : 'FEMALE';
-
-  return {
-    valid: true,
-    format: 'OLD',
-    gender,
-    birthYear,
-  };
+/**
+ * Normalize a NIC before sending it to the backend:
+ * - trim leading/trailing whitespace
+ * - uppercase the old-format V/X suffix (lowercase v/x accepted on input)
+ * - never removes characters inside the NIC
+ */
+export function normalizeNic(nic: string): string {
+  const trimmed = nic.trim();
+  return trimmed.replace(/[vx](?=$)/i, (c) => c.toUpperCase());
 }
 
 /**

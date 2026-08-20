@@ -5,7 +5,7 @@ import { FormField } from '../components/FormField';
 import { Modal } from '../components/Modal';
 import { PrimaryButton, SecondaryButton } from '../components/buttons';
 import { api } from '../lib/api';
-import { validateSriLankanNic, getNicHint } from '../utils/format';
+import { validateSriLankanNic, normalizeNic, getNicHint } from '../utils/format';
 
 export interface RiderFormValues {
   fullName: string;
@@ -139,6 +139,7 @@ export function RiderFormModal({ open, initial, onClose, onSave }: RiderFormModa
     try {
       const payload: RiderPayload = {
         ...form,
+        nic: normalizeNic(form.nic),
         vehicleId: form.vehicleId || null,
       };
       if (isEdit && !payload.password) delete payload.password;
@@ -214,7 +215,7 @@ export function RiderFormModal({ open, initial, onClose, onSave }: RiderFormModa
           <input
             className="input"
             value={form.nic}
-            onChange={(e) => set('nic', e.target.value.toUpperCase())}
+            onChange={(e) => set('nic', e.target.value)}
             placeholder="e.g. 911234567V or 199112345678"
             maxLength={12}
           />

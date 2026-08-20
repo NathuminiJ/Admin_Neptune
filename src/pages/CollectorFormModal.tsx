@@ -4,7 +4,7 @@ import type { CollectorView } from '../types';
 import { FormField } from '../components/FormField';
 import { Modal } from '../components/Modal';
 import { PrimaryButton, SecondaryButton } from '../components/buttons';
-import { uid, validateSriLankanNic, getNicHint } from '../utils/format';
+import { uid, validateSriLankanNic, normalizeNic, getNicHint } from '../utils/format';
 
 export interface CollectorFormValues {
   fullName: string;
@@ -115,7 +115,7 @@ export function CollectorFormModal({
     if (Object.keys(next).length > 0) return;
     setSaving(true);
     try {
-      const payload: CollectorPayload = { ...form };
+      const payload: CollectorPayload = { ...form, nic: normalizeNic(form.nic) };
       if (isEdit && !payload.password) delete payload.password;
       await onSave(payload);
     } catch {
@@ -182,7 +182,7 @@ export function CollectorFormModal({
           <input
             className="input"
             value={form.nic}
-            onChange={(e) => set('nic', e.target.value.toUpperCase())}
+            onChange={(e) => set('nic', e.target.value)}
             placeholder="e.g. 921234567V or 199212345678"
             maxLength={12}
           />
