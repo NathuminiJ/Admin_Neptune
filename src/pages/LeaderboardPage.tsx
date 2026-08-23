@@ -97,7 +97,7 @@ export function LeaderboardPage() {
     if (period === 'date' && !date) return 'Select a date to view the leaderboard.';
     if (entries.length === 0) {
       return period === 'date'
-        ? `No collections found for ${formatDateKey(date)}`
+        ? 'No leaderboard data available for this date.'
         : 'No records found';
     }
     const ranked = `${entries.length} collector${entries.length !== 1 ? 's' : ''} ranked`;
@@ -191,8 +191,8 @@ export function LeaderboardPage() {
           ) : period === 'date' ? (
             <EmptyState
               icon="inbox"
-              title={`No collections found for ${formatDateKey(date)}.`}
-              description="Leaderboard rankings for this date will appear once collectors complete collections on that day."
+              title="No leaderboard data available for this date."
+              description={`No collections were recorded on ${formatDateKey(date)}. Rankings for other periods are not shown while a specific date is selected.`}
             />
           ) : (
             <EmptyState
