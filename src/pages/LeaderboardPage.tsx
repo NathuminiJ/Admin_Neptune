@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Avatar } from '../components/Avatar';
 import { DataTable } from '../components/DataTable';
 import type { Column } from '../components/DataTable';
@@ -58,7 +58,10 @@ export function LeaderboardPage() {
     }
   };
 
+  const fetchSeq = useRef(0);
+
   const fetchLeaderboard = useCallback(async () => {
+    const seq = ++fetchSeq.current;
     if (period === 'date' && !date) {
       setEntries([]);
       setLoading(false);
@@ -75,11 +78,13 @@ export function LeaderboardPage() {
           ? `/admin/leaderboard?date=${date}`
           : '/admin/leaderboard';
       const data = await api.get<LeaderboardEntry[]>(path);
+      if (seq !== fetchSeq.current) return;
       setEntries(data);
     } catch (err: any) {
+      if (seq !== fetchSeq.current) return;
       setError(err.message || 'Failed to load leaderboard');
     } finally {
-      setLoading(false);
+      if (seq === fetchSeq.current) setLoading(false);
     }
   }, [period, date]);
 
