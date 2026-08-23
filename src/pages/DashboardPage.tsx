@@ -15,6 +15,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { StatusBadge } from '../components/StatusBadge';
 import { StatisticCard } from '../components/StatisticCard';
+import { UniversityDistributionCard } from '../components/UniversityDistributionCard';
 import { DataTable } from '../components/DataTable';
 import { OctagonalIconContainer } from '../components/OctagonalIconContainer';
 import { api } from '../lib/api';
@@ -364,6 +365,9 @@ export function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* University Distribution */}
+      <UniversityDistributionCard />
 
       {/* Collector Leaderboard */}
       <div className="card" style={{ marginTop: 20 }}>

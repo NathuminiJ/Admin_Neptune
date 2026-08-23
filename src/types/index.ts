@@ -299,3 +299,20 @@ export interface AssignmentPayload {
 }
 
 export type UpdateAssignmentPayload = Partial<AssignmentPayload>;
+
+export interface University {
+  id: string;
+  name: string;
+  createdAt?: string;
+}
+
+export interface UniversityDistributionEntry {
+  universityId: string;
+  universityName: string;
+  total: number;
+}
+
+export interface UniversityDistributionResponse {
+  date?: string;
+  items: UniversityDistributionEntry[];
+}

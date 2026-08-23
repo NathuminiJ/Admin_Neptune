@@ -16,6 +16,7 @@ import { RequestDetailsPage } from './pages/RequestDetailsPage';
 import { LeaderboardPage } from './pages/LeaderboardPage';
 import { ReportsPage } from './pages/ReportsPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { UniversitiesPage } from './pages/UniversitiesPage';
 
 function RequireAuth() {
   const { isAuthenticated } = useAuth();
@@ -39,6 +40,7 @@ export default function App() {
           <Route path="/riders" element={<RidersPage />} />
           <Route path="/riders/:id" element={<RiderDetailsPage />} />
           <Route path="/vehicles" element={<VehiclesPage />} />
+<Route path="/universities" element={<UniversitiesPage />} />
           <Route path="/vehicles/:id" element={<VehicleDetailsPage />} />
           <Route path="/assignments" element={<AssignmentsPage />} />
           <Route path="/assignments/:id" element={<AssignmentDetailsPage />} />
