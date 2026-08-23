@@ -16,6 +16,30 @@ const PERIOD_OPTIONS = [
   { value: 'date', label: 'Specific Date' },
 ];
 
+/**
+ * The leaderboard API has returned both bare arrays and wrapped objects at
+ * different times. Accept every known shape without assuming one property:
+ * [], { data: [] }, { leaderboard: [] }, { items: [] }, or any object whose
+ * first array-valued property holds the rows.
+ */
+function extractLeaderboardRows(payload: unknown): LeaderboardEntry[] {
+  const sanitize = (rows: unknown[]): LeaderboardEntry[] =>
+    rows.filter((row): row is LeaderboardEntry => Boolean(row) && typeof row === 'object');
+
+  if (Array.isArray(payload)) return sanitize(payload);
+
+  if (payload && typeof payload === 'object') {
+    const obj = payload as Record<string, unknown>;
+    for (const key of ['data', 'leaderboard', 'items'] as const) {
+      if (Array.isArray(obj[key])) return sanitize(obj[key] as unknown[]);
+    }
+    const firstArray = Object.values(obj).find((value) => Array.isArray(value));
+    if (firstArray) return sanitize(firstArray as unknown[]);
+  }
+
+  return [];
+}
+
 function rankBadge(rank: number) {
   const tones: Record<number, { bg: string; color: string; border: string }> = {
     1: { bg: '#fef3c7', color: '#92400e', border: '#fde68a' },
@@ -78,11 +102,9 @@ export function LeaderboardPage() {
           : period === 'date'
           ? `/admin/leaderboard?date=${date}`
           : '/admin/leaderboard';
-      const data = await api.get<LeaderboardEntry[]>(path);
+      const data = await api.get<unknown>(path);
       if (seq !== fetchSeq.current) return;
-      // The API may return null/undefined/non-array on edge paths; never store
-      // anything but a clean array of row objects.
-      setEntries(Array.isArray(data) ? data.filter((e) => e && typeof e === 'object') : []);
+      setEntries(extractLeaderboardRows(data));
     } catch (err: any) {
       if (seq !== fetchSeq.current) return;
       setError(err.message || 'Failed to load leaderboard');
