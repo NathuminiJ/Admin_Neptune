@@ -3,6 +3,7 @@ import { Avatar } from '../components/Avatar';
 import { DataTable } from '../components/DataTable';
 import type { Column } from '../components/DataTable';
 import { EmptyState, ErrorState, LoadingState } from '../components/states';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 import { FilterDropdown } from '../components/FilterDropdown';
 import { api } from '../lib/api';
 import type { LeaderboardEntry } from '../types';
@@ -79,7 +80,9 @@ export function LeaderboardPage() {
           : '/admin/leaderboard';
       const data = await api.get<LeaderboardEntry[]>(path);
       if (seq !== fetchSeq.current) return;
-      setEntries(data);
+      // The API may return null/undefined/non-array on edge paths; never store
+      // anything but a clean array of row objects.
+      setEntries(Array.isArray(data) ? data.filter((e) => e && typeof e === 'object') : []);
     } catch (err: any) {
       if (seq !== fetchSeq.current) return;
       setError(err.message || 'Failed to load leaderboard');
@@ -111,20 +114,27 @@ export function LeaderboardPage() {
       key: 'rank',
       header: 'Rank',
       width: '72px',
-      render: (row) => (
-        <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          {rankBadge(row.rank) ?? <span style={{ fontWeight: 600, fontSize: 13 }}>{row.rank}</span>}
-        </span>
-      ),
+      render: (row) => {
+        const rank = Number(row?.rank);
+        return (
+          <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            {Number.isFinite(rank) && rank > 0
+              ? (rankBadge(rank) ?? (
+                  <span style={{ fontWeight: 600, fontSize: 13 }}>{rank}</span>
+                ))
+              : '—'}
+          </span>
+        );
+      },
     },
     {
       key: 'collector',
       header: 'Collector',
       render: (row) => (
         <span className="cell-primary">
-          <Avatar name={row.fullName} tone={row.rank <= 3 ? 'deep' : 'green-100'} />
+          <Avatar name={row?.fullName || 'Unknown'} tone={Number(row?.rank) <= 3 ? 'deep' : 'green-100'} />
           <span>
-            <span className="cell-title">{row.fullName}</span>
+            <span className="cell-title">{row?.fullName || 'Unknown Collector'}</span>
           </span>
         </span>
       ),
@@ -133,23 +143,24 @@ export function LeaderboardPage() {
       key: 'totalWeightKg',
       header: 'Total Weight (kg)',
       render: (row) => (
-        <span style={{ fontWeight: 600 }}>{formatWeight(row.totalWeightKg)}</span>
+        <span style={{ fontWeight: 600 }}>{formatWeight(Number(row?.totalWeightKg) || 0)}</span>
       ),
     },
     {
       key: 'totalCollections',
       header: 'Total Collections',
-      render: (row) => <span>{row.totalCollections}</span>,
+      render: (row) => <span>{Number(row?.totalCollections) || 0}</span>,
     },
   ];
 
   return (
-    <div className="fade-in">
-      <div className="page-head">
-        <div>
-          <p>{description}</p>
+    <ErrorBoundary>
+      <div className="fade-in">
+        <div className="page-head">
+          <div>
+            <p>{description}</p>
+          </div>
         </div>
-      </div>
 
       <div className="toolbar">
         <FilterDropdown
@@ -207,10 +218,11 @@ export function LeaderboardPage() {
           <DataTable
             columns={columns}
             rows={entries}
-            rowKey={(row) => row.collectorId}
+            rowKey={(row) => String(row?.collectorId ?? row?.rank ?? 'row')}
           />
         </div>
       )}
-    </div>
+      </div>
+    </ErrorBoundary>
   );
 }
