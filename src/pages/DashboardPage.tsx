@@ -2,7 +2,6 @@ import {
   BarChart3,
   ClipboardList,
   ClipboardPlus,
-  Clock,
   Plus,
   Recycle,
   Trophy,
@@ -10,6 +9,7 @@ import {
   UserCheck,
   UserPlus,
   Users,
+  Weight,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -113,14 +113,22 @@ export function DashboardPage() {
     [requests],
   );
 
+  // Sum of recorded collection weights from the real backend payload. Only
+  // requests that have an actual collection record contribute weight —
+  // pending/accepted/cancelled requests carry no `collection` and are
+  // naturally excluded; null weights are skipped rather than counted as 0.
+  const totalWeightKg = useMemo(
+    () => requests.reduce((sum, r) => sum + (r.collection?.weightKg ?? 0), 0),
+    [requests],
+  );
+
   const stats = useMemo(
     () => ({
       collectors: collectors.filter((c) => c.status === 'ACTIVE').length,
       riders: riders.filter((r) => r.status === 'ACTIVE').length,
       vehicles: vehicles.filter((v) => v.status === 'ACTIVE').length,
-      pending: requestStats.PENDING,
     }),
-    [collectors, riders, vehicles, requestStats],
+    [collectors, riders, vehicles],
   );
 
   const todayAssignments = useMemo(
@@ -217,12 +225,12 @@ export function DashboardPage() {
           hintTone="flat"
         />
         <StatisticCard
-          label="Pending Requests"
-          value={stats.pending}
-          icon={Clock}
+          label="Total Weight Collected"
+          value={formatWeight(totalWeightKg)}
+          icon={Weight}
           tone="amber"
-          hint="needs action"
-          hintTone="down"
+          hint="all recorded collections"
+          hintTone="flat"
         />
         <StatisticCard
           label="Total Collections"
